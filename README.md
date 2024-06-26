@@ -24,7 +24,7 @@ Using bash script to automate daily working sysadmin (init installation, (health
 - monitoring (cpu, memory, disk)
 - monitoring service (database, nginx, dll)
 - file integrity checker
-- backup (konfiguration, source code, database)
+- backup (configuration, source code, database)
 - alert
 - log
 - audit
@@ -34,6 +34,7 @@ Using bash script to automate daily working sysadmin (init installation, (health
 # Requirement
 - bash
 - ubuntu os
+- user with root privilledge (for installation)
 
 # Feature
 
