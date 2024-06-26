@@ -102,6 +102,18 @@ install_clamav() {
     fi
 }
 
+remove_package() {
+    PACKAGE=$1
+    if command -v $PACKAGE &> /dev/null; then
+        echo "Removing $PACKAGE..."
+        sudo apt-get remove -y $PACKAGE
+        sudo apt-get purge -y $PACKAGE
+        echo "$PACKAGE removed successfully."
+    else
+        echo "$PACKAGE is not installed."
+    fi
+}
+
 check_uptime() {
     echo "System Uptime:"
     uptime
@@ -122,9 +134,33 @@ check_disk() {
     df -h
 }
 
+healthcheck_report() {
+    echo "Health Check Report:"
+    check_uptime
+    check_cpu
+    check_memory
+    check_disk
+}
+
+audit_system() {
+    echo "Auditing System with Lynis..."
+    sudo lynis audit system
+}
+
+monitoring_service() {
+    echo "Monitoring Services..."
+    sudo systemctl list-units --type=service
+}
+
+daily_backup_database() {
+    echo "Daily Backup Database..."
+    # Still On Progress
+}
+
 # Main menu
 while true; do
     clear
+    echo "─────────────────────────────────────────────────────────────"
     echo "─────────────────────────────────────────────────────────────"
     echo "─██████████████─██████████████─██████████████─██████████████─"
     echo "─██░░░░░░░░░░██─██░░░░░░░░░░██─██░░░░░░░░░░██─██░░░░░░░░░░██─"
@@ -137,12 +173,16 @@ while true; do
     echo "─██████████░░██─██░░██──██░░██─██████████░░██─────██░░██─────"
     echo "─██░░░░░░░░░░██─██░░██──██░░██─██░░░░░░░░░░██─────██░░██─────"
     echo "─██████████████─██████──██████─██████████████─────██████─────"
+    echo "─────────────────────────────────────────────────────────────"
+    echo "─────────────────────────────────────────────────────────────"
     echo "Main Menu"
     echo "1. Init"
     echo "2. Health Check"
     echo "3. Extra Tools"
-    echo "4. Exit"
-    read -p "Please select an option [1-4]: " main_option
+    echo "4. Daily Task"
+    echo "5. Remove"
+    echo "6. Exit"
+    read -p "Please select an option [1-6]: " main_option
 
     case $main_option in
         1)
@@ -219,6 +259,58 @@ while true; do
             done
             ;;
         4)
+            while true; do
+                clear
+                echo "Daily Task Menu"
+                echo "1. Health Check Report"
+                echo "2. Audit System"
+                echo "3. Monitoring Service"
+                echo "4. Daily Backup Database"
+                echo "5. Back to Main Menu"
+                read -p "Please select an option [1-5]: " daily_task_option
+
+                case $daily_task_option in
+                    1) healthcheck_report ;;
+                    2) audit_system ;;
+                    3) monitoring_service ;;
+                    4) daily_backup_database ;;
+                    5) break ;;
+                    *) echo "Invalid option, please try again." ;;
+                esac
+
+                read -p "Press [Enter] key to continue..."
+            done
+            ;;
+        5)
+            while true; do
+                clear
+                echo "Remove Menu"
+                echo "1. Remove Nginx"
+                echo "2. Remove Docker"
+                echo "3. Remove PostgreSQL"
+                echo "4. Remove MySQL"
+                echo "5. Remove Lynis"
+                echo "6. Remove ClamAV"
+                echo "7. Remove PHP"
+                echo "8. Back to Main Menu"
+                read -p "Please select an option [1-8]: " remove_option
+
+                case $remove_option in
+                    1) remove_package nginx ;;
+                    2) remove_package docker ;;
+                    3) remove_package postgresql ;;
+                    4) remove_package mysql ;;
+                    5) remove_package lynis ;;
+                    6) remove_package clamav ;;
+                    7) remove_package php ;;
+                    8) break ;;
+                    *) echo "Invalid option, please try again." ;;
+                esac
+
+                read -p "Press [Enter] key to continue..."
+            done
+            ;;
+        6)
             break ;;
         *) echo "Invalid option, please try again." ;;
     esac
