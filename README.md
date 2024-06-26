@@ -1,4 +1,4 @@
-# SAST (Satrio Automation Sysadmin Tools)
+# SAST (Simple Automation Sysadmin Tools)
 
 ```bash
 ─────────────────────────────────────────────────────────────
@@ -29,6 +29,7 @@ Using bash script to automate daily working sysadmin (init installation, (health
 - log
 - audit
 - security
+- hardening (ssh,firewall)
 
 # Requirement
 - bash
@@ -48,6 +49,19 @@ Using bash script to automate daily working sysadmin (init installation, (health
 
 <img src="asset/healthcheck.png" alt="drawing" width="400"/>
 
+### Daily Task
+
+<img src="asset/dailytask.png" alt="drawing" width="400"/>
+
+### Remove
+
+<img src="asset/remove.png" alt="drawing" width="400"/>
+
+
 ### Extra Tools
 
 <img src="asset/extratools.png" alt="drawing" width="400"/>
+
+### Exit
+
+<img src="asset/exit.png" alt="drawing" width="400"/>
