@@ -1,5 +1,7 @@
 #!/bin/bash
 
+LOG_FILE="/var/log/user_management.log"
+
 install_package() {
     PACKAGE=$1
     if ! command -v $PACKAGE &> /dev/null; then
@@ -154,7 +156,238 @@ monitoring_service() {
 
 daily_backup_database() {
     echo "Daily Backup Database..."
-    # Still On Progress
+}
+
+get_repository() {
+    echo "List of repositories:"
+    sudo apt-cache policy
+}
+
+create_repository() {
+    read -p "Enter repository to add: " repository
+    sudo add-apt-repository $repository
+    sudo apt-get update
+}
+
+update_repository() {
+    sudo apt-get update
+}
+
+delete_repository() {
+    read -p "Enter repository to remove: " repository
+    sudo add-apt-repository --remove $repository
+    sudo apt-get update
+}
+
+get_service() {
+    echo "List of services:"
+    sudo systemctl list-units --type=service
+}
+
+create_service() {
+    echo "Creating a new service..."
+}
+
+update_service() {
+    echo "Updating a service..."
+}
+
+delete_service() {
+    read -p "Enter service name to delete: " service
+    sudo systemctl stop $service
+    sudo systemctl disable $service
+}
+
+get_network() {
+    echo "List of network interfaces:"
+    ip addr
+}
+
+create_network() {
+    echo "Creating a new network interface..."
+}
+
+update_network() {
+    echo "Updating a network interface..."
+}
+
+delete_network() {
+    echo "Deleting a network interface..."
+}
+
+if [ ! -f "$LOG_FILE" ]; then
+    sudo touch $LOG_FILE
+    sudo chmod 666 $LOG_FILE
+fi
+
+log_activity() {
+    local action=$1
+    local user=$2
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $action - $user" | sudo tee -a $LOG_FILE > /dev/null
+}
+
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+install_auditd() {
+    if ! command_exists auditctl; then
+        echo "Installing auditd..."
+        sudo apt-get update
+        sudo apt-get install -y auditd audispd-plugins
+    else
+        echo "auditd is already installed."
+    fi
+
+    if [ ! -d "/etc/audit/rules.d/" ]; then
+        echo "Creating audit rules directory..."
+        sudo mkdir -p /etc/audit/rules.d/
+    fi
+
+    if [ ! -f "/etc/audit/rules.d/audit.rules" ]; then
+        echo "Creating audit rules file..."
+        sudo touch /etc/audit/rules.d/audit.rules
+        sudo chmod 600 /etc/audit/rules.d/audit.rules
+    fi
+}
+
+configure_auditd() {
+    local username=$1
+    local audit_rules_file="/etc/audit/rules.d/audit.rules"
+
+    echo "Configuring auditd to log commands for user: $username"
+
+    sudo bash -c "echo '-a exit,always -F arch=b64 -F euid=$username -S execve' >> $audit_rules_file"
+    sudo bash -c "echo '-a exit,always -F arch=b32 -F euid=$username -S execve' >> $audit_rules_file"
+
+    echo "Restarting auditd service..."
+    sudo systemctl restart auditd || echo "Failed to restart auditd. Please check the auditd service status."
+}
+
+add_user() {
+    local username password expire_date
+    read -p "Enter username: " username
+    read -s -p "Enter password: " password
+    echo
+    read -p "Enter expiration date (YYYY-MM-DD): " expire_date
+
+    sudo useradd -m -d /home/$username -p $(openssl passwd -1 $password) -e $expire_date $username
+    if [ $? -eq 0 ]; then
+        echo "User $username added successfully"
+        log_activity "ADD_USER" $username
+        configure_auditd $username
+    else
+        echo "Failed to add user $username"
+    fi
+}
+
+delete_user() {
+    local username
+    read -p "Enter username to delete: " username
+
+    sudo userdel $username
+    if [ $? -eq 0 ]; then
+        echo "User $username deleted successfully"
+        log_activity "DELETE_USER" $username
+    else
+        echo "Failed to delete user $username"
+    fi
+}
+
+update_user() {
+    local username new_shell new_password expire_date
+    read -p "Enter username to update: " username
+    echo "Choose the attribute to update:"
+    echo "1. Shell"
+    echo "2. Password"
+    echo "3. Expiration Date"
+    read -p "Enter your choice [1-3]: " attribute
+
+    case $attribute in
+        1)
+            read -p "Enter new shell: " new_shell
+            sudo usermod -s $new_shell $username
+            ;;
+        2)
+            read -s -p "Enter new password: " new_password
+            echo
+            sudo usermod -p $(openssl passwd -1 $new_password) $username
+            ;;
+        3)
+            read -p "Enter new expiration date (YYYY-MM-DD): " expire_date
+            sudo usermod -e $expire_date $username
+            ;;
+        *)
+            echo "Invalid choice"
+            return
+            ;;
+    esac
+
+    if [ $? -eq 0 ]; then
+        echo "User $username updated successfully"
+        log_activity "UPDATE_USER" $username
+    else
+        echo "Failed to update user $username"
+    fi
+}
+
+list_users() {
+    cut -d: -f1 /etc/passwd
+    log_activity "LIST_USERS" "N/A"
+}
+
+retrieve_logs() {
+    local username
+    read -p "Enter username to retrieve logs: " username
+
+    sudo ausearch -ua "$username"
+    if [ $? -ne 0 ]; then
+        echo "No logs found for user $username"
+    fi
+}
+
+check_active_sessions() {
+    local username
+    read -p "Enter username to check active sessions: " username
+
+    who | grep "$username"
+    if [ $? -ne 0 ]; then
+        echo "No active sessions found for user $username"
+    else
+        echo "Active sessions for user $username:"
+        who | grep "$username"
+    fi
+}
+
+user_management_menu() {
+    while true; do
+        clear
+        echo "======================="
+        echo " User Management Menu"
+        echo "======================="
+        echo "1. Add User"
+        echo "2. Remove User"
+        echo "3. Get List of Users"
+        echo "4. Update User"
+        echo "5. Get User Logs"
+        echo "6. Check Active Sessions"
+        echo "7. Back to Manage Menu"
+        echo "======================="
+        read -p "Enter your choice: " choice
+
+        case $choice in
+            1) add_user ;;
+            2) delete_user ;;
+            3) list_users ;;
+            4) update_user ;;
+            5) retrieve_logs ;;
+            6) check_active_sessions ;;
+            7) break ;;
+            *) echo "Invalid choice. Please enter a number between 1 and 7." ;;
+        esac
+
+        read -p "Press [Enter] key to continue..."
+    done
 }
 
 # Main menu
@@ -177,12 +410,13 @@ while true; do
     echo "─────────────────────────────────────────────────────────────"
     echo "Main Menu"
     echo "1. Init"
-    echo "2. Health Check"
-    echo "3. Extra Tools"
-    echo "4. Daily Task"
-    echo "5. Remove"
-    echo "6. Exit"
-    read -p "Please select an option [1-6]: " main_option
+    echo "2. Manage"
+    echo "3. Health Check"
+    echo "4. Extra Tools"
+    echo "5. Daily Task"
+    echo "6. Remove"
+    echo "7. Exit"
+    read -p "Please select an option [1-7]: " main_option
 
     case $main_option in
         1)
@@ -211,6 +445,124 @@ while true; do
         2)
             while true; do
                 clear
+                echo "Manage Menu"
+                echo "1. User"
+                echo "2. Repository"
+                echo "3. Services"
+                echo "4. Network"
+                echo "5. Back to Main Menu"
+                read -p "Please select an option [1-5]: " manage_option
+
+                case $manage_option in
+                    1)
+                        while true; do
+                            clear
+                            echo "======================="
+                            echo " User Management Menu"
+                            echo "======================="
+                            echo "1. Add User"
+                            echo "2. Remove User"
+                            echo "3. Get List of Users"
+                            echo "4. Update User"
+                            echo "5. Get User Logs"
+                            echo "6. Check Active Sessions"
+                            echo "7. Back to Manage Menu"
+                            echo "======================="
+                            read -p "Enter your choice: " choice
+
+                            case $choice in
+                                1) add_user ;;
+                                2) delete_user ;;
+                                3) list_users ;;
+                                4) update_user ;;
+                                5) retrieve_logs ;;
+                                6) check_active_sessions ;;
+                                7) break ;;
+                                *) echo "Invalid choice. Please enter a number between 1 and 7." ;;
+                            esac
+
+                            read -p "Press [Enter] key to continue..."
+                        done
+                        ;;
+                    2)
+                        while true; do
+                            clear
+                            echo "Repository Management"
+                            echo "1. Get Repositories"
+                            echo "2. Create Repository"
+                            echo "3. Update Repository"
+                            echo "4. Delete Repository"
+                            echo "5. Back to Manage Menu"
+                            read -p "Please select an option [1-5]: " repo_option
+
+                            case $repo_option in
+                                1) get_repository ;;
+                                2) create_repository ;;
+                                3) update_repository ;;
+                                4) delete_repository ;;
+                                5) break ;;
+                                *) echo "Invalid option, please try again." ;;
+                            esac
+
+                            read -p "Press [Enter] key to continue..."
+                        done
+                        ;;
+                    3)
+                        while true; do
+                            clear
+                            echo "Service Management"
+                            echo "1. Get Services"
+                            echo "2. Create Service"
+                            echo "3. Update Service"
+                            echo "4. Delete Service"
+                            echo "5. Back to Manage Menu"
+                            read -p "Please select an option [1-5]: " service_option
+
+                            case $service_option in
+                                1) get_service ;;
+                                2) create_service ;;
+                                3) update_service ;;
+                                4) delete_service ;;
+                                5) break ;;
+                                *) echo "Invalid option, please try again." ;;
+                             esac
+
+                            read -p "Press [Enter] key to continue..."
+                        done
+                        ;;
+                    4)
+                        while true; do
+                            clear
+                            echo "Network Management"
+                            echo "1. Get Network Interfaces"
+                            echo "2. Create Network Interface"
+                            echo "3. Update Network Interface"
+                            echo "4. Delete Network Interface"
+                            echo "5. Back to Manage Menu"
+                            read -p "Please select an option [1-5]: " network_option
+
+                            case $network_option in
+                                1) get_network ;;
+                                2) create_network ;;
+                                3) update_network ;;
+                                4) delete_network ;;
+                                5) break ;;
+                                *) echo "Invalid option, please try again." ;;
+                            esac
+
+                            read -p "Press [Enter] key to continue..."
+                        done
+                        ;;
+                    5) break ;;
+                    *) echo "Invalid option, please try again." ;;
+                esac
+
+                read -p "Press [Enter] key to continue..."
+            done
+            ;;
+        3)
+            while true; do
+                clear
                 echo "Health Check Menu"
                 echo "1. Check Uptime"
                 echo "2. Check CPU Usage"
@@ -231,7 +583,7 @@ while true; do
                 read -p "Press [Enter] key to continue..."
             done
             ;;
-        3)
+        4)
             while true; do
                 clear
                 echo "Extra Tools Menu"
@@ -258,11 +610,11 @@ while true; do
                 read -p "Press [Enter] key to continue..."
             done
             ;;
-        4)
+        5)
             while true; do
                 clear
                 echo "Daily Task Menu"
-                echo "1. Health Check Report"
+                echo "1. Healthcheck Report"
                 echo "2. Audit System"
                 echo "3. Monitoring Service"
                 echo "4. Daily Backup Database"
@@ -281,7 +633,7 @@ while true; do
                 read -p "Press [Enter] key to continue..."
             done
             ;;
-        5)
+        6)
             while true; do
                 clear
                 echo "Remove Menu"
@@ -310,7 +662,7 @@ while true; do
                 read -p "Press [Enter] key to continue..."
             done
             ;;
-        6)
+        7)
             break ;;
         *) echo "Invalid option, please try again." ;;
     esac
