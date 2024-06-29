@@ -1,0 +1,17 @@
+name: Bash Lint Checker
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint:
+    name: Lint Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run ShellCheck
+        uses: azohra/shell-linter@latest
+        with:
+          path: "src/*.sh"
+          severity: "error"
