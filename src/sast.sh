@@ -76,12 +76,8 @@ while true; do
                     8)
                         configure_git
                         ;;
-                    9)
-                        echo "Exiting..."
-                        exit 0
-                        ;;
-                    10) break ;;
-                    *) echo "Invalid option, please try again." ;;
+                    9) break ;;
+                    *) echo "Invalid choice. Please enter a number between 1 and 9." ;;
                 esac
 
                 read -p "Press [Enter] key to continue..."
