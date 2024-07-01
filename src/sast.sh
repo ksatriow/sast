@@ -1,16 +1,16 @@
 #!/bin/bash
 
-source ../function/audit.sh
-source ../function/dailytask.sh
-source ../function/extratools.sh
-source ../function/healthcheck.sh
-source ../function/init.sh
-source ../function/managedatabase.sh
-source ../function/managenetwork.sh
-source ../function/managerepository.sh
-source ../function/manageservice.sh
-source ../function/manageuser.sh
-source ../function/menu.sh
+source ./function/audit.sh
+source ./function/dailytask.sh
+source ./function/extratools.sh
+source ./function/healthcheck.sh
+source ./function/init.sh
+source ./function/managedatabase.sh
+source ./function/managenetwork.sh
+source ./function/managerepository.sh
+source ./function/manageservice.sh
+source ./function/manageuser.sh
+source ./function/menu.sh
 
 
 # Main menu
@@ -50,7 +50,11 @@ while true; do
                 echo "2. Install Git"
                 echo "3. Install Vim"
                 echo "4. Install PHP"
-                echo "5. Back to Main Menu"
+                echo "5. Set Timezone"
+                echo "6. Set Hostname"
+                echo "7. Configure SSH"
+                echo "8. Configure Git"
+                echo "9. Back to Main Menu"
                 read -p "Please select an option [1-5]: " install_option
 
                 case $install_option in
@@ -58,8 +62,22 @@ while true; do
                     2) install_package git ;;
                     3) install_package vim ;;
                     4) install_package php ;;
-                    5) break ;;
-                    *) echo "Invalid option, please try again." ;;
+                    5)
+                        check_root_privileges "$@"
+                        select_timezone
+                        ;;
+                    6)
+                        check_root_privileges "$@"
+                        set_hostname
+                        ;;
+                    7)
+                        configure_ssh
+                        ;;
+                    8)
+                        configure_git
+                        ;;
+                    9) break ;;
+                    *) echo "Invalid choice. Please enter a number between 1 and 9." ;;
                 esac
 
                 read -p "Press [Enter] key to continue..."
