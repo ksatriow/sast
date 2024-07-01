@@ -1,16 +1,16 @@
 #!/bin/bash
 
-source ../function/audit.sh
-source ../function/dailytask.sh
-source ../function/extratools.sh
-source ../function/healthcheck.sh
-source ../function/init.sh
-source ../function/managedatabase.sh
-source ../function/managenetwork.sh
-source ../function/managerepository.sh
-source ../function/manageservice.sh
-source ../function/manageuser.sh
-source ../function/menu.sh
+source ./function/audit.sh
+source ./function/dailytask.sh
+source ./function/extratools.sh
+source ./function/healthcheck.sh
+source ./function/init.sh
+source ./function/managedatabase.sh
+source ./function/managenetwork.sh
+source ./function/managerepository.sh
+source ./function/manageservice.sh
+source ./function/manageuser.sh
+source ./function/menu.sh
 
 
 # Main menu
