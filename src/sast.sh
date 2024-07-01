@@ -50,7 +50,11 @@ while true; do
                 echo "2. Install Git"
                 echo "3. Install Vim"
                 echo "4. Install PHP"
-                echo "5. Back to Main Menu"
+                echo "5. Set Timezone"
+                echo "6. Set Hostname"
+                echo "7. Configure SSH"
+                echo "8. Configure Git"
+                echo "9. Back to Main Menu"
                 read -p "Please select an option [1-5]: " install_option
 
                 case $install_option in
@@ -58,7 +62,25 @@ while true; do
                     2) install_package git ;;
                     3) install_package vim ;;
                     4) install_package php ;;
-                    5) break ;;
+                    5)
+                        check_root_privileges "$@"
+                        select_timezone
+                        ;;
+                    6)
+                        check_root_privileges "$@"
+                        set_hostname
+                        ;;
+                    7)
+                        configure_ssh
+                        ;;
+                    8)
+                        configure_git
+                        ;;
+                    9)
+                        echo "Exiting..."
+                        exit 0
+                        ;;
+                    10) break ;;
                     *) echo "Invalid option, please try again." ;;
                 esac
 
